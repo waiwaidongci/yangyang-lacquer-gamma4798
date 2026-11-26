@@ -14,5 +14,6 @@ class Run(Base):
     created_at: Mapped[str] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(16), index=True)
     settings: Mapped[dict] = mapped_column(JSON)
+    calibration_version: Mapped[int] = mapped_column(default=0)
     result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text)

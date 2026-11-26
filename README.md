@@ -22,8 +22,9 @@ API 默认监听 `127.0.0.1:19344`。接口文档在 `/api/docs`，机器可读�
 
 1. `POST /api/auth/login` 接收带 `email`、`password` 的 JSON。后续业务请求通过 `Authorization: Bearer <access_token>` 鉴权。
 2. `GET /api/spec` 查看 CSV 列、参数和结果口径。`GET /api/datasets` 查找演示台账，或用 `POST /api/datasets` 提交带 `name`、`csv` 的 JSON。
-3. `POST /api/runs` 提交 `dataset_id`、`label` 和可选的 `settings`。响应包含运行 ID 及最终状态。`GET /api/runs/{id}` 返回业务指标、表格或失败原因。
-4. 负责人调用 `POST /api/runs/{id}/review`，提交 `decision`（`approved` 或 `rejected`）和 `note`。批准后可通过 `GET /api/runs/{id}/export/{table_key}` 下载业务表。表名和字段从运行结果取得。
+3. `GET /api/calibration` 查看当前仪表校准规则及版本。`PUT /api/calibration` 以 `rules` 整组提交校准规则，每条含 `meter`、`starts`、`ends`、`lower`、`upper`（湿度校正偏差上下限，百分点）；每次变更产生新版本，运行按发起时的当前版本计算。
+4. `POST /api/runs` 提交 `dataset_id`、`label` 和可选的 `settings`。响应包含运行 ID 及最终状态。`GET /api/runs/{id}` 返回业务指标、表格或失败原因，并附交接状态（校准版本、失效与暂停信息）。
+5. 负责人调用 `POST /api/runs/{id}/review`，提交 `decision`（`approved` 或 `rejected`）和 `note`。批准后可通过 `GET /api/runs/{id}/export/{table_key}` 下载业务表。表名和字段从运行结果取得。校准规则更新后，训练受影响的旧版本运行拒绝导出估时表；仅待排班读数被更正时，受影响工单在导出中标记暂停交接，响应头 `X-Paused-Orders` 列出工单号。
 
 ## 代码与配置
 

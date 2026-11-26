@@ -4,9 +4,9 @@ import logging
 from src.domain.project import analyze
 
 
-def calculate(rows, settings):
+def calculate(rows, settings, rules=None):
     try:
-        result = analyze(rows, settings)
+        result = analyze(rows, settings, rules)
         json.dumps(result, ensure_ascii=False, allow_nan=False)
     except ValueError as error:
         return None, str(error)

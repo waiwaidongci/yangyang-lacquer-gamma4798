@@ -2,10 +2,11 @@
 
 from math import isfinite
 
+from .calibration import MAX_RULES, MAX_SHIFT, RULE_LABELS, normalize_rules
 from .fixtures import demo_rows as demo_rows
 from .model import chronological_split, fit_gamma
 from .records import FIELDS, normalize_rows as normalize_rows
-from .reporting import build_report
+from .reporting import build_calibrated_report, build_report
 
 
 SPEC = {
@@ -15,7 +16,14 @@ SPEC = {
         {"key": "holdout_percent", "label": "末期作业日留出比例（%）", "default": 25, "min": 10, "max": 40, "step": 5},
         {"key": "alpha", "label": "Gamma 正则系数", "default": 0.01, "min": 0.001, "max": 1, "step": 0.001},
     ],
-    "modules": {"datasets": "补漆来源台账", "runs": "拟合与时序留出", "results": "干燥估时与排班", "reviews": "排班复核与导出"},
+    "modules": {"datasets": "补漆来源台账", "calibration": "仪表校准规则", "runs": "拟合与时序留出", "results": "干燥估时与排班", "reviews": "排班复核与导出"},
+    "calibration": {
+        "fields": RULE_LABELS,
+        "max_shift": MAX_SHIFT,
+        "max_rules": MAX_RULES,
+        "rule": "换表后按仪表与测读时段更正湿度，上下限各拟合一次，每件取较长估时。规则更新后旧估时立即失效；"
+                "仅更正待排班读数时暂停对应工单交接，其余照常；重算算齐后一次性切换正式估时。",
+    },
     "limitation": "估时适用于同类漆料与干燥判定条件。超训练范围的预测须现场复核，完工仍以实测确认。",
     "dataset_name": "雕版补漆工单_202611.csv",
     "recommendation": "优先核对估时超过预留的工单，按配漆批次发放等候与排班清单。",
@@ -38,7 +46,10 @@ def _settings(settings: dict) -> dict:
     return values
 
 
-def analyze(rows: list[dict], settings: dict) -> dict:
+def analyze(rows: list[dict], settings: dict, rules: list | None = None) -> dict:
     options = _settings(settings)
     split = chronological_split(normalize_rows(rows), options["holdout_percent"])
-    return build_report(split, fit_gamma(split.train, options["alpha"]))
+    active = normalize_rules(rules) if rules else []
+    if not active:
+        return build_report(split, fit_gamma(split.train, options["alpha"]))
+    return build_calibrated_report(split, active, options["alpha"])

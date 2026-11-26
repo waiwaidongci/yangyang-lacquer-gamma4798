@@ -18,3 +18,5 @@ class RunInfo(BaseModel):
     status: RunStatus
     settings: dict
     decision: str | None
+    calibration_version: int
+    calibration_stale: bool
